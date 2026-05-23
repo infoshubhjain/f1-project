@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shubh's Pit Wall · F1 2026</title>
+<title>Shubh's Pit Wall · F1 2025 Live</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -941,7 +941,7 @@ body {
   <div class="hero-top">
     <div class="brand-eyebrow">
       <span class="checker-flag"></span>
-      <span>Personal Edition · F1 2026</span>
+      <span>Personal Edition · F1 2025 Live</span>
     </div>
     <div class="brand-right">
       <div class="greeting" id="greeting">Good morning, Shubh</div>
@@ -1007,7 +1007,7 @@ body {
 <section class="cal-section">
   <div class="cal-head">
     <div class="cal-title">Season <em>Calendar</em></div>
-    <div class="cal-meta">23 Rounds · Mar → Dec 2026</div>
+    <div class="cal-meta">2025 F1 Season · Live Data</div>
   </div>
 
   <div class="cal-strip-wrap">
@@ -1212,26 +1212,26 @@ body {
 </section>
 
 <section class="stats-ribbon">
-  <div class="stats-grid">
+  <div class="stats-grid" id="statsGrid">
     <div class="stat">
       <div class="stat-label">Championship Lead</div>
-      <div class="stat-big"><em>+9</em> pts</div>
-      <div class="stat-sub">Antonelli over Russell</div>
+      <div class="stat-big"><em>+0</em> pts</div>
+      <div class="stat-sub">Loading...</div>
     </div>
     <div class="stat">
-      <div class="stat-label">Fastest Lap 2026</div>
-      <div class="stat-big">1:28.411</div>
-      <div class="stat-sub">Russell · Japan Q3</div>
+      <div class="stat-label">Total Races</div>
+      <div class="stat-big">0</div>
+      <div class="stat-sub">Loading...</div>
     </div>
     <div class="stat">
-      <div class="stat-label">Fastest Pit Stop</div>
-      <div class="stat-big">1.94<em>s</em></div>
-      <div class="stat-sub">McLaren · Japanese GP</div>
+      <div class="stat-label">Season Progress</div>
+      <div class="stat-big">0<em>%</em></div>
+      <div class="stat-sub">Loading...</div>
     </div>
     <div class="stat">
-      <div class="stat-label">Verstappen Gap</div>
-      <div class="stat-big">P9 <em>·</em> −60</div>
-      <div class="stat-sub">Worst start since 2017</div>
+      <div class="stat-label">Most Wins</div>
+      <div class="stat-big">0</div>
+      <div class="stat-sub">Loading...</div>
     </div>
   </div>
 </section>
@@ -1244,6 +1244,48 @@ body {
 </div>
 
 <script>
+// ========== API Configuration ==========
+const API_BASE = 'http://api.jolpi.ca/ergast/f1';
+const CURRENT_SEASON = '2025';
+
+// ========== Utility Functions ==========
+const teamColors = {
+  'Mercedes': 'var(--mercedes)',
+  'Ferrari': 'var(--ferrari)',
+  'McLaren': 'var(--mclaren)',
+  'Red Bull': 'var(--redbull)',
+  'Williams': 'var(--williams)',
+  'Haas F1 Team': '#4a4a4a',
+  'Alpine F1 Team': 'var(--alpine)',
+  'Aston Martin': 'var(--aston)',
+  'RB F1 Team': 'var(--racingbulls)',
+  'Sauber': 'var(--audi)'
+};
+
+const teamCodes = {
+  'Mercedes': 'MER',
+  'Ferrari': 'FER',
+  'McLaren': 'MCL',
+  'Red Bull': 'RBR',
+  'Williams': 'WIL',
+  'Haas F1 Team': 'HAA',
+  'Alpine F1 Team': 'ALP',
+  'Aston Martin': 'AST',
+  'RB F1 Team': 'RBT',
+  'Sauber': 'SAU'
+};
+
+const countryFlags = {
+  'Australian': '🇦🇺', 'Bahrain': '🇧🇭', 'Chinese': '🇨🇳', 'Japanese': '🇯🇵',
+  'Miami': '🇺🇸', 'Emilia Romagna': '🇮🇹', 'Monaco': '🇲🇨', 'Canadian': '🇨🇦',
+  'Spanish': '🇪🇸', 'Austrian': '🇦🇹', 'British': '🇬🇧', 'Hungarian': '🇭🇺',
+  'Belgian': '🇧🇪', 'Dutch': '🇳🇱', 'Italian': '🇮🇹', 'Azerbaijan': '🇦🇿',
+  'Singapore': '🇸🇬', 'United States': '🇺🇸', 'Mexico City': '🇲🇽',
+  'São Paulo': '🇧🇷', 'Las Vegas': '🇺🇸', 'Qatar': '🇶🇦', 'Abu Dhabi': '🇦🇪',
+  'Barcelona': '🇪🇸', 'Madring': '🇪🇸'
+};
+
+// ========== Date & Greeting ==========
 (function(){
   const now = new Date();
   const h = now.getHours();
@@ -1254,9 +1296,238 @@ body {
   document.getElementById('dateline').textContent = D[now.getDay()] + ' · ' + String(now.getDate()).padStart(2,'0') + ' ' + M[now.getMonth()] + ' · ' + now.getFullYear();
 })();
 
-(function(){
-  const target = new Date('2026-05-03T20:00:00Z').getTime();
+// ========== Fetch Driver Standings ==========
+async function fetchDriverStandings() {
+  try {
+    const res = await fetch(`${API_BASE}/${CURRENT_SEASON}/driverStandings.json`);
+    const data = await res.json();
+    const standings = data.MRData.StandingsTable.StandingsLists[0];
+    const drivers = standings.DriverStandings.slice(0, 10);
+
+    const container = document.querySelector('.col:nth-child(1)');
+    const header = container.querySelector('.col-head');
+    const round = standings.round;
+    header.querySelector('.col-sub').textContent = `Top 10 · After ${round} Rounds`;
+
+    let html = '';
+    drivers.forEach((d, i) => {
+      const driver = d.Driver;
+      const constructor = d.Constructors[0];
+      const pos = parseInt(d.position);
+      const pts = d.points;
+      const gap = pos > 1 ? `−${parseInt(drivers[0].points) - parseInt(pts)}` : '';
+      const teamColor = teamColors[constructor.name] || 'var(--ink-3)';
+      const code = (driver.code || driver.familyName.substring(0,3).toUpperCase());
+      const leaderClass = pos === 1 ? 'leader' : '';
+      const delay = 4.5 + (i * 0.08);
+
+      html += `
+      <div class="driver-row ${leaderClass}" style="--team-color: ${teamColor}; animation-delay:${delay}s;">
+        <div class="driver-pos">${String(pos).padStart(2,'0')}</div>
+        <div class="driver-info">
+          <div class="driver-line">
+            <span class="driver-name">${driver.givenName.charAt(0)}. ${driver.familyName}</span>
+            <span class="driver-code" style="background:${teamColor};">${code}</span>
+          </div>
+          <div class="driver-team">${constructor.name} · ${driver.nationality.substring(0,3).toUpperCase()} ${gap ? '· <span class="gap">'+gap+'</span>' : ''}</div>
+        </div>
+        <div class="driver-pts-wrap">
+          <div class="driver-pts">${pts}</div>
+          <div class="driver-pts-sub">pts</div>
+        </div>
+      </div>`;
+    });
+
+    container.innerHTML = header.outerHTML + html;
+  } catch (err) {
+    console.error('Failed to fetch driver standings:', err);
+  }
+}
+
+// ========== Fetch Constructor Standings ==========
+async function fetchConstructorStandings() {
+  try {
+    const res = await fetch(`${API_BASE}/${CURRENT_SEASON}/constructorStandings.json`);
+    const data = await res.json();
+    const standings = data.MRData.StandingsTable.StandingsLists[0];
+    const constructors = standings.ConstructorStandings;
+
+    const container = document.querySelector('.col:nth-child(2)');
+    const header = container.querySelector('.col-head');
+    const maxPoints = parseInt(constructors[0].points);
+
+    let html = '';
+    constructors.forEach((c, i) => {
+      const con = c.Constructor;
+      const pts = parseInt(c.points);
+      const teamColor = teamColors[con.name] || 'var(--ink-3)';
+      const barWidth = Math.round((pts / maxPoints) * 100);
+      const delay = 4.5 + (i * 0.08);
+      const barDelay = 5.5 + (i * 0.05);
+
+      html += `
+      <div class="con-row" style="--team-color: ${teamColor}; animation-delay:${delay}s;">
+        <div class="con-top">
+          <div class="con-pos">${String(c.position).padStart(2,'0')}</div>
+          <div>
+            <div class="con-name">${con.name}</div>
+            <div class="con-engine">${con.nationality}</div>
+          </div>
+          <div class="con-pts">${pts}</div>
+        </div>
+        <div class="con-bar">
+          <div class="con-bar-fill" style="width:${barWidth}%; animation-delay:${barDelay}s;"></div>
+        </div>
+      </div>`;
+    });
+
+    container.innerHTML = header.outerHTML + html;
+  } catch (err) {
+    console.error('Failed to fetch constructor standings:', err);
+  }
+}
+
+// ========== Fetch Last Race Results ==========
+async function fetchLastRace() {
+  try {
+    const res = await fetch(`${API_BASE}/${CURRENT_SEASON}/last/results.json`);
+    const data = await res.json();
+    const race = data.MRData.RaceTable.Races[0];
+    const results = race.Results.slice(0, 3);
+
+    const podiumBlock = document.querySelector('.podium-block');
+    const raceName = race.raceName;
+    const circuit = race.Circuit.circuitName;
+
+    let html = `
+      <div class="podium-head">${raceName} · ${circuit} · Result</div>
+      <div class="podium-list">`;
+
+    results.forEach((r, i) => {
+      const driver = r.Driver;
+      const constructor = r.Constructor;
+      const time = i === 0 ? r.Time?.time || 'N/A' : (r.Time ? '+'+r.Time.time : 'DNF');
+      const podClass = `p${i+1}`;
+
+      html += `
+        <div class="pod-row ${podClass}">
+          <div class="pod-badge">P${i+1}</div>
+          <div>
+            <div class="pod-driver-name">${driver.givenName} ${driver.familyName}</div>
+            <div class="pod-driver-team">${constructor.name} · #${r.number}</div>
+          </div>
+          <div class="pod-time">${time}</div>
+        </div>`;
+    });
+
+    html += '</div>';
+    podiumBlock.innerHTML = html;
+  } catch (err) {
+    console.error('Failed to fetch last race:', err);
+  }
+}
+
+// ========== Fetch Race Calendar ==========
+async function fetchRaceCalendar() {
+  try {
+    const res = await fetch(`${API_BASE}/${CURRENT_SEASON}.json`);
+    const data = await res.json();
+    const races = data.MRData.RaceTable.Races;
+
+    // Get last race results to find winners
+    const lastRaceRes = await fetch(`${API_BASE}/${CURRENT_SEASON}/results.json`);
+    const lastRaceData = await lastRaceRes.json();
+    const allRaces = lastRaceData.MRData.RaceTable.Races;
+
+    const now = new Date();
+    let nextRaceIndex = -1;
+    let completedRaces = 0;
+
+    let html = '';
+    races.forEach((race, i) => {
+      const raceDate = new Date(race.date + 'T' + (race.time || '00:00:00'));
+      const isPast = raceDate < now;
+      const isNext = !isPast && nextRaceIndex === -1;
+
+      if (isNext) nextRaceIndex = i;
+      if (isPast) completedRaces++;
+
+      const classes = isPast ? 'done' : isNext ? 'next' : '';
+      const flag = countryFlags[race.raceName.replace(' Grand Prix', '')] || '🏁';
+      const country = race.Circuit.Location.country.toUpperCase().substring(0, 3);
+      const circuitName = race.Circuit.circuitName.replace('Circuit', '').replace('Autodrome', '').replace('International', '').trim();
+      const dateObj = new Date(race.date);
+      const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][dateObj.getMonth()];
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const raceRound = race.round;
+
+      // Find winner if race is done
+      let winner = '';
+      if (isPast) {
+        const raceResult = allRaces.find(r => r.round === race.round);
+        if (raceResult && raceResult.Results && raceResult.Results[0]) {
+          const winnerDriver = raceResult.Results[0].Driver;
+          winner = `<div class="cal-winner">${winnerDriver.givenName.charAt(0)}. ${winnerDriver.familyName}</div>`;
+        }
+      }
+
+      html += `
+      <div class="cal-round ${classes}">
+        <div class="cal-rnum">R${String(raceRound).padStart(2,'0')}${isNext ? ' · NEXT' : ''}<span class="cal-status-dot"></span></div>
+        <div class="cal-flag-emoji">${flag}</div>
+        <div class="cal-country">${country}</div>
+        <div class="cal-flag-name">${circuitName}</div>
+        <div class="cal-date">${monthShort} ${day}</div>
+        ${winner}
+      </div>`;
+    });
+
+    document.getElementById('calStrip').innerHTML = html;
+
+    // Update progress bar
+    const progress = (completedRaces / races.length) * 100;
+    document.querySelector('.cal-progress-fill').style.width = progress + '%';
+
+    // Update next race info and countdown
+    if (nextRaceIndex >= 0) {
+      updateNextRaceInfo(races[nextRaceIndex]);
+    }
+
+    // Scroll to next race
+    setTimeout(() => {
+      const next = document.querySelector('.cal-round.next');
+      if (next) {
+        document.getElementById('calStrip').scrollTo({ left: next.offsetLeft - 60, behavior: 'smooth' });
+      }
+    }, 5000);
+  } catch (err) {
+    console.error('Failed to fetch calendar:', err);
+  }
+}
+
+// ========== Update Next Race Info ==========
+function updateNextRaceInfo(race) {
+  const raceDate = new Date(race.date + 'T' + (race.time || '14:00:00Z'));
+  const raceName = race.raceName.replace(' Grand Prix', '');
+  const flag = countryFlags[raceName] || '🏁';
+  const circuit = race.Circuit.circuitName;
+  const location = race.Circuit.Location.locality;
+
+  // Update race block
+  document.querySelector('.race-round').textContent = `◆ Round ${String(race.round).padStart(2,'0')} · Up Next`;
+  document.querySelector('.race-flag-big').textContent = flag;
+  document.querySelector('.race-name').innerHTML = `${raceName} <em>Grand Prix</em>`;
+  document.querySelectorAll('.race-circuit')[0].innerHTML = `<strong>${circuit}</strong> · ${location}`;
+
+  // Start countdown
+  startCountdown(raceDate);
+}
+
+// ========== Countdown Timer ==========
+function startCountdown(targetDate) {
+  const target = targetDate.getTime();
   const pad = (n) => String(n).padStart(2,'0');
+
   function tick() {
     const diff = target - Date.now();
     if (diff <= 0) {
@@ -1268,35 +1539,106 @@ body {
     document.getElementById('cd-m').textContent = pad(Math.floor((diff % 3600000) / 60000));
     document.getElementById('cd-s').textContent = pad(Math.floor((diff % 60000) / 1000));
   }
+
   tick();
   setInterval(tick, 1000);
-})();
+}
 
-(function(){
-  const items = [
-    { sym:'WDC', val:'ANTONELLI', pts:'72 pts' },
-    { sym:'WCC', val:'MERCEDES', pts:'135 pts' },
-    { sym:'NEXT', val:'MIAMI GP', pts:'MAY 3' },
-    { sym:'WINNER', val:'ANTONELLI', pts:'JAPAN' },
-    { sym:'FL', val:'RUSSELL', pts:'1:28.411' },
-    { sym:'FAST PIT', val:'MCLAREN', pts:'1.94s' },
-    { sym:'VER', val:'−60', pts:'P9' },
-    { sym:'ROOKIE', val:'LINDBLAD', pts:'4 pts' },
-  ];
-  const mk = (it) => `<span class="tick"><span class="sym">${it.sym}</span> <span class="val">${it.val}</span> <span class="pts">${it.pts}</span></span><span class="tick tick-dot">◆</span>`;
-  const half = items.map(mk).join('');
-  document.getElementById('tkTrack').innerHTML = half + half;
-})();
+// ========== Update Ticker ==========
+async function updateTicker() {
+  try {
+    const [driverRes, constructorRes] = await Promise.all([
+      fetch(`${API_BASE}/${CURRENT_SEASON}/driverStandings.json`),
+      fetch(`${API_BASE}/${CURRENT_SEASON}/constructorStandings.json`)
+    ]);
 
-(function(){
-  setTimeout(() => {
-    const next = document.querySelector('.cal-round.next');
-    if (next) {
-      const strip = document.getElementById('calStrip');
-      strip.scrollTo({ left: next.offsetLeft - 60, behavior: 'smooth' });
-    }
-  }, 5000);
-})();
+    const driverData = await driverRes.json();
+    const constructorData = await constructorRes.json();
+
+    const leader = driverData.MRData.StandingsTable.StandingsLists[0].DriverStandings[0];
+    const constructorLeader = constructorData.MRData.StandingsTable.StandingsLists[0].ConstructorStandings[0];
+
+    const items = [
+      { sym:'WDC', val:leader.Driver.familyName.toUpperCase(), pts:leader.points + ' pts' },
+      { sym:'WCC', val:constructorLeader.Constructor.name.toUpperCase(), pts:constructorLeader.points + ' pts' },
+      { sym:'SEASON', val:CURRENT_SEASON + ' F1', pts:'LIVE' },
+      { sym:'LEADER', val:leader.Driver.familyName.toUpperCase(), pts:leader.wins + ' WINS' },
+    ];
+
+    const mk = (it) => `<span class="tick"><span class="sym">${it.sym}</span> <span class="val">${it.val}</span> <span class="pts">${it.pts}</span></span><span class="tick tick-dot">◆</span>`;
+    const half = items.map(mk).join('');
+    document.getElementById('tkTrack').innerHTML = half + half;
+  } catch (err) {
+    console.error('Failed to update ticker:', err);
+  }
+}
+
+// ========== Update Stats Ribbon ==========
+async function updateStats() {
+  try {
+    const [driverRes, raceRes] = await Promise.all([
+      fetch(`${API_BASE}/${CURRENT_SEASON}/driverStandings.json`),
+      fetch(`${API_BASE}/${CURRENT_SEASON}.json`)
+    ]);
+
+    const driverData = await driverRes.json();
+    const raceData = await raceRes.json();
+
+    const standings = driverData.MRData.StandingsTable.StandingsLists[0].DriverStandings;
+    const leader = standings[0];
+    const secondPlace = standings[1];
+    const races = raceData.MRData.RaceTable.Races;
+
+    const now = new Date();
+    const completedRaces = races.filter(r => new Date(r.date) < now).length;
+    const totalRaces = races.length;
+    const progress = Math.round((completedRaces / totalRaces) * 100);
+
+    const gap = parseInt(leader.points) - parseInt(secondPlace.points);
+    const leaderName = leader.Driver.familyName;
+    const secondName = secondPlace.Driver.familyName;
+    const mostWins = leader.wins;
+
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat">
+        <div class="stat-label">Championship Lead</div>
+        <div class="stat-big"><em>+${gap}</em> pts</div>
+        <div class="stat-sub">${leaderName} over ${secondName}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Completed Races</div>
+        <div class="stat-big">${completedRaces}<em>/${totalRaces}</em></div>
+        <div class="stat-sub">${CURRENT_SEASON} Season</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Season Progress</div>
+        <div class="stat-big">${progress}<em>%</em></div>
+        <div class="stat-sub">${totalRaces - completedRaces} races remaining</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Most Wins</div>
+        <div class="stat-big">${mostWins}</div>
+        <div class="stat-sub">${leaderName} · ${CURRENT_SEASON}</div>
+      </div>`;
+  } catch (err) {
+    console.error('Failed to update stats:', err);
+  }
+}
+
+// ========== Initialize Everything ==========
+async function init() {
+  await Promise.all([
+    fetchDriverStandings(),
+    fetchConstructorStandings(),
+    fetchLastRace(),
+    fetchRaceCalendar(),
+    updateTicker(),
+    updateStats()
+  ]);
+}
+
+// Start the app
+init();
 </script>
 </body>
 </html>
