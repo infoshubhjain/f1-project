@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shubh's Pit Wall · F1 2025 Live</title>
+<title>Shubh's Pit Wall · F1 Live</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -947,7 +947,7 @@ body {
   <div class="hero-top">
     <div class="brand-eyebrow">
       <span class="checker-flag"></span>
-      <span>Personal Edition · F1 2025 Live</span>
+      <span id="brandYear">Personal Edition · F1 2026 Live</span>
     </div>
     <div class="brand-right">
       <div class="greeting" id="greeting">Good morning, Shubh</div>
@@ -1013,7 +1013,7 @@ body {
 <section class="cal-section">
   <div class="cal-head">
     <div class="cal-title">Season <em>Calendar</em></div>
-    <div class="cal-meta">2025 F1 Season · Live Data</div>
+    <div class="cal-meta" id="calMeta">2026 F1 Season · Live Data</div>
   </div>
 
   <div class="cal-strip-wrap">
@@ -1252,7 +1252,7 @@ body {
 <script>
 // ========== API Configuration ==========
 const API_BASE = 'http://api.jolpi.ca/ergast/f1';
-const CURRENT_SEASON = '2025';
+const CURRENT_SEASON = new Date().getFullYear().toString();
 
 // ========== Utility Functions ==========
 const teamColors = {
@@ -1299,7 +1299,12 @@ const countryFlags = {
   document.getElementById('greeting').textContent = g + ', Shubh';
   const D = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
   const M = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-  document.getElementById('dateline').textContent = D[now.getDay()] + ' · ' + String(now.getDate()).padStart(2,'0') + ' ' + M[now.getMonth()] + ' · ' + now.getFullYear();
+  const year = now.getFullYear();
+  document.getElementById('dateline').textContent = D[now.getDay()] + ' · ' + String(now.getDate()).padStart(2,'0') + ' ' + M[now.getMonth()] + ' · ' + year;
+
+  // Update year references dynamically
+  document.getElementById('brandYear').textContent = `Personal Edition · F1 ${year} Live`;
+  document.getElementById('calMeta').textContent = `${year} F1 Season · Live Data`;
 })();
 
 // ========== Fetch Driver Standings ==========
