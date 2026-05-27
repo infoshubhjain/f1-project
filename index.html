@@ -974,25 +974,25 @@ body {
     <div class="race-grid">
       <div class="race-left">
         <div class="race-meta-row">
-          <span class="race-round">◆ Round 04 · Up Next</span>
-          <span class="race-flag-big">🇺🇸</span>
+          <span class="race-round">◆ Loading...</span>
+          <span class="race-flag-big">🏁</span>
         </div>
-        <h2 class="race-name">Miami <em>Grand Prix</em></h2>
-        <div class="race-circuit"><strong>Miami International Autodrome</strong> · Hard Rock Stadium</div>
-        <div class="race-circuit">Round 4 of 23 · 57 laps · 308.326 km</div>
+        <h2 class="race-name">Loading <em>Race Data</em></h2>
+        <div class="race-circuit"><strong>Please wait...</strong></div>
+        <div class="race-circuit" style="display:none;">Details loading</div>
 
-        <div class="race-stats">
+        <div class="race-stats" style="opacity: 0.5;">
           <div class="race-stat">
-            <div class="race-stat-label">Lap Record</div>
-            <div class="race-stat-val">1:29.708</div>
+            <div class="race-stat-label">Status</div>
+            <div class="race-stat-val">Loading</div>
           </div>
           <div class="race-stat">
-            <div class="race-stat-label">Pole 2025</div>
-            <div class="race-stat-val">M. Verstappen</div>
+            <div class="race-stat-label">Season</div>
+            <div class="race-stat-val" id="raceSeasonDisplay">--</div>
           </div>
           <div class="race-stat">
-            <div class="race-stat-label">Dates</div>
-            <div class="race-stat-val">May 1 – 3</div>
+            <div class="race-stat-label">Round</div>
+            <div class="race-stat-val">--</div>
           </div>
         </div>
       </div>
@@ -1252,7 +1252,48 @@ body {
 <script>
 // ========== API Configuration ==========
 const API_BASE = 'http://api.jolpi.ca/ergast/f1';
-const CURRENT_SEASON = new Date().getFullYear().toString();
+const CURRENT_YEAR = new Date().getFullYear();
+let CURRENT_SEASON = CURRENT_YEAR.toString();
+let SEASON_DETECTED = false;
+
+// ========== Detect Available Season ==========
+async function detectAvailableSeason() {
+  if (SEASON_DETECTED) return CURRENT_SEASON;
+
+  // Try current year first
+  try {
+    const res = await fetch(`${API_BASE}/${CURRENT_YEAR}/driverStandings.json`);
+    const data = await res.json();
+    if (data.MRData && data.MRData.StandingsTable && data.MRData.StandingsTable.StandingsLists && data.MRData.StandingsTable.StandingsLists.length > 0) {
+      CURRENT_SEASON = CURRENT_YEAR.toString();
+      SEASON_DETECTED = true;
+      console.log(`✓ Using ${CURRENT_SEASON} season data`);
+      return CURRENT_SEASON;
+    }
+  } catch (err) {
+    console.warn(`${CURRENT_YEAR} data not available, trying previous year...`);
+  }
+
+  // Fall back to previous year
+  try {
+    const prevYear = CURRENT_YEAR - 1;
+    const res = await fetch(`${API_BASE}/${prevYear}/driverStandings.json`);
+    const data = await res.json();
+    if (data.MRData && data.MRData.StandingsTable && data.MRData.StandingsTable.StandingsLists && data.MRData.StandingsTable.StandingsLists.length > 0) {
+      CURRENT_SEASON = prevYear.toString();
+      SEASON_DETECTED = true;
+      console.log(`✓ Using ${CURRENT_SEASON} season data (fallback)`);
+      return CURRENT_SEASON;
+    }
+  } catch (err) {
+    console.error('Failed to detect available season:', err);
+  }
+
+  // Ultimate fallback
+  CURRENT_SEASON = '2025';
+  SEASON_DETECTED = true;
+  return CURRENT_SEASON;
+}
 
 // ========== Utility Functions ==========
 const teamColors = {
@@ -1301,10 +1342,6 @@ const countryFlags = {
   const M = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   const year = now.getFullYear();
   document.getElementById('dateline').textContent = D[now.getDay()] + ' · ' + String(now.getDate()).padStart(2,'0') + ' ' + M[now.getMonth()] + ' · ' + year;
-
-  // Update year references dynamically
-  document.getElementById('brandYear').textContent = `Personal Edition · F1 ${year} Live`;
-  document.getElementById('calMeta').textContent = `${year} F1 Season · Live Data`;
 })();
 
 // ========== Fetch Driver Standings ==========
@@ -1711,16 +1748,43 @@ async function updateStats() {
   }
 }
 
+// ========== Update Season Display ==========
+function updateSeasonDisplay() {
+  document.getElementById('brandYear').textContent = `Personal Edition · F1 ${CURRENT_SEASON} Live`;
+  document.getElementById('calMeta').textContent = `${CURRENT_SEASON} F1 Season · Live Data`;
+  const raceSeasonEl = document.getElementById('raceSeasonDisplay');
+  if (raceSeasonEl) {
+    raceSeasonEl.textContent = CURRENT_SEASON;
+  }
+  console.log(`📊 Dashboard displaying ${CURRENT_SEASON} season`);
+}
+
 // ========== Initialize Everything ==========
 async function init() {
-  await Promise.all([
-    fetchDriverStandings(),
-    fetchConstructorStandings(),
-    fetchLastRace(),
-    fetchRaceCalendar(),
-    updateTicker(),
-    updateStats()
-  ]);
+  try {
+    console.log('🏎️ Initializing F1 Dashboard...');
+
+    // Step 1: Detect which season has data
+    await detectAvailableSeason();
+
+    // Step 2: Update all season displays
+    updateSeasonDisplay();
+
+    // Step 3: Fetch all data in parallel
+    await Promise.all([
+      fetchDriverStandings(),
+      fetchConstructorStandings(),
+      fetchLastRace(),
+      fetchRaceCalendar(),
+      updateTicker(),
+      updateStats()
+    ]);
+
+    console.log('✅ Dashboard loaded successfully');
+  } catch (err) {
+    console.error('❌ Dashboard initialization failed:', err);
+    alert(`Failed to load F1 data. Please refresh the page. Error: ${err.message}`);
+  }
 }
 
 // Start the app
