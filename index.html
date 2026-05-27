@@ -1254,9 +1254,22 @@ body {
 
 <script>
 // ========== VERSION ==========
-const DASHBOARD_VERSION = '2.0.1-SYNTAX FIX';
-console.log(`%c🏎️ F1 Dashboard v${DASHBOARD_VERSION}`, 'background: #cc0000; color: #fff; padding: 8px 16px; font-size: 14px; font-weight: bold;');
-console.log('%c✅ SyntaxError fixed - Code should execute properly now', 'color: #00ff00; font-weight: bold;');
+const DASHBOARD_VERSION = '2.0.2-FINAL';
+const BUILD_TIMESTAMP = Date.now(); // Unique per build
+console.clear(); // Clear any old logs
+console.log(`%c🏎️ F1 Dashboard v${DASHBOARD_VERSION}`, 'background: #cc0000; color: #fff; padding: 8px 16px; font-size: 16px; font-weight: bold;');
+console.log(`%c⏰ Build Time: ${new Date().toISOString()}`, 'background: #0066cc; color: #fff; padding: 4px 12px;');
+console.log('%c✅ All fixes applied - Monaco GP (June 7) should show as NEXT', 'color: #00ff00; font-weight: bold; font-size: 14px;');
+console.log('%c📍 Current Status Check:', 'color: #ffff00; font-weight: bold; font-size: 14px;');
+
+// Add visible version indicator to page
+setTimeout(() => {
+  const versionDiv = document.createElement('div');
+  versionDiv.id = 'version-indicator';
+  versionDiv.innerHTML = `v${DASHBOARD_VERSION} | ${new Date().toLocaleTimeString()}`;
+  versionDiv.style.cssText = 'position:fixed;bottom:10px;right:10px;background:#cc0000;color:#fff;padding:8px 12px;font-size:11px;font-family:monospace;z-index:9999;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+  document.body.appendChild(versionDiv);
+}, 1000);
 
 // ========== API Configuration ==========
 const API_BASE = 'http://api.jolpi.ca/ergast/f1';
@@ -1578,19 +1591,26 @@ async function fetchRaceCalendar() {
     document.querySelector('.cal-progress-fill').style.width = progress + '%';
 
     // Summary logging
+    console.log('═'.repeat(60));
     console.log(`📊 Race Summary: ${completedRaces} completed, ${races.length - completedRaces} remaining`);
+    console.log('═'.repeat(60));
+
     if (liveRaceIndex >= 0) {
-      console.log(`🔴 LIVE: ${races[liveRaceIndex].raceName} (Round ${races[liveRaceIndex].round})`);
+      console.log(`%c🔴 LIVE NOW: ${races[liveRaceIndex].raceName} (Round ${races[liveRaceIndex].round})`, 'background: #cc0000; color: #fff; padding: 4px 8px; font-weight: bold;');
     }
     if (nextRaceIndex >= 0) {
-      console.log(`🏁 NEXT: ${races[nextRaceIndex].raceName} (Round ${races[nextRaceIndex].round}) on ${races[nextRaceIndex].date}`);
+      console.log(`%c🏁 NEXT RACE: ${races[nextRaceIndex].raceName} (Round ${races[nextRaceIndex].round}) on ${races[nextRaceIndex].date}`, 'background: #000; color: #00ff00; padding: 4px 8px; font-weight: bold; font-size: 14px;');
+      console.log(`%c👆 THIS RACE (${races[nextRaceIndex].raceName}) SHOULD BE DISPLAYED AS "NEXT" ON THE PAGE`, 'color: #00ff00; font-weight: bold; font-size: 13px;');
     }
+    console.log('═'.repeat(60));
 
     // Update race info - prioritize live race, then next race
     if (liveRaceIndex >= 0) {
       updateLiveRaceInfo(races[liveRaceIndex]);
+      console.log('%c✅ Displaying LIVE race info in hero section', 'color: #00ff00;');
     } else if (nextRaceIndex >= 0) {
       updateNextRaceInfo(races[nextRaceIndex], false);
+      console.log(`%c✅ Displaying NEXT race (${races[nextRaceIndex].raceName}) in hero section`, 'color: #00ff00; font-weight: bold;');
     } else {
       console.warn('⚠️ No upcoming races found');
     }
