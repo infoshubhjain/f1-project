@@ -1489,25 +1489,36 @@ async function fetchRaceCalendar() {
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayTimestamp = today.getTime();
+
     let nextRaceIndex = -1;
     let liveRaceIndex = -1;
     let completedRaces = 0;
 
+    console.log(`📅 Today's date: ${today.toDateString()} (${todayTimestamp})`);
+
     let html = '';
     races.forEach((race, i) => {
-      const raceDate = new Date(race.date + 'T' + (race.time || '14:00:00'));
-      const raceDateOnly = new Date(race.date);
+      // Parse race date properly to local timezone midnight
+      const [year, month, day] = race.date.split('-').map(Number);
+      const raceDateOnly = new Date(year, month - 1, day); // month is 0-indexed
+      const raceDateTimestamp = raceDateOnly.getTime();
 
       // Check if race weekend is happening (Friday-Sunday, so 2 days before race day to race day)
-      const twoDaysBefore = new Date(raceDateOnly);
-      twoDaysBefore.setDate(twoDaysBefore.getDate() - 2);
-      const isLive = today >= twoDaysBefore && today <= raceDateOnly;
+      const twoDaysBefore = new Date(year, month - 1, day - 2);
+      const twoDaysBeforeTimestamp = twoDaysBefore.getTime();
+      const isLive = todayTimestamp >= twoDaysBeforeTimestamp && todayTimestamp <= raceDateTimestamp;
 
-      // Check if race is in the past (race day has passed)
-      const isPast = raceDateOnly < today && !isLive;
+      // Check if race is in the past (race day has completely passed)
+      const isPast = raceDateTimestamp < todayTimestamp && !isLive;
 
       // Check if this is the next upcoming race
       const isNext = !isPast && !isLive && nextRaceIndex === -1 && liveRaceIndex === -1;
+
+      // Debug logging for first 7 races
+      if (i < 7) {
+        console.log(`Race ${i + 1}: ${race.raceName} on ${race.date} (${raceDateOnly.toDateString()}) - isPast: ${isPast}, isLive: ${isLive}, isNext: ${isNext}`);
+      }
 
       if (isLive) liveRaceIndex = i;
       if (isNext) nextRaceIndex = i;
@@ -1551,11 +1562,22 @@ async function fetchRaceCalendar() {
     const progress = (completedRaces / races.length) * 100;
     document.querySelector('.cal-progress-fill').style.width = progress + '%';
 
+    // Summary logging
+    console.log(`📊 Race Summary: ${completedRaces} completed, ${races.length - completedRaces} remaining`);
+    if (liveRaceIndex >= 0) {
+      console.log(`🔴 LIVE: ${races[liveRaceIndex].raceName} (Round ${races[liveRaceIndex].round})`);
+    }
+    if (nextRaceIndex >= 0) {
+      console.log(`🏁 NEXT: ${races[nextRaceIndex].raceName} (Round ${races[nextRaceIndex].round}) on ${races[nextRaceIndex].date}`);
+    }
+
     // Update race info - prioritize live race, then next race
     if (liveRaceIndex >= 0) {
       updateLiveRaceInfo(races[liveRaceIndex]);
     } else if (nextRaceIndex >= 0) {
       updateNextRaceInfo(races[nextRaceIndex], false);
+    } else {
+      console.warn('⚠️ No upcoming races found');
     }
 
     // Scroll to live or next race
@@ -1672,11 +1694,12 @@ async function updateTicker() {
     // Check for live race weekend (Friday-Sunday)
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayTimestamp = today.getTime();
     const liveRace = races.find(race => {
-      const raceDateOnly = new Date(race.date);
-      const twoDaysBefore = new Date(raceDateOnly);
-      twoDaysBefore.setDate(twoDaysBefore.getDate() - 2);
-      return today >= twoDaysBefore && today <= raceDateOnly;
+      const [year, month, day] = race.date.split('-').map(Number);
+      const raceDateOnly = new Date(year, month - 1, day);
+      const twoDaysBefore = new Date(year, month - 1, day - 2);
+      return todayTimestamp >= twoDaysBefore.getTime() && todayTimestamp <= raceDateOnly.getTime();
     });
 
     const items = [
@@ -1713,7 +1736,13 @@ async function updateStats() {
     const races = raceData.MRData.RaceTable.Races;
 
     const now = new Date();
-    const completedRaces = races.filter(r => new Date(r.date) < now).length;
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayTimestamp = today.getTime();
+    const completedRaces = races.filter(r => {
+      const [year, month, day] = r.date.split('-').map(Number);
+      const raceDate = new Date(year, month - 1, day);
+      return raceDate.getTime() < todayTimestamp;
+    }).length;
     const totalRaces = races.length;
     const progress = Math.round((completedRaces / totalRaces) * 100);
 
