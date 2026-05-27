@@ -1254,13 +1254,14 @@ body {
 
 <script>
 // ========== VERSION ==========
-const DASHBOARD_VERSION = '2.0.2-FINAL';
+const DASHBOARD_VERSION = '2.1.0-HTTPS FIX';
 const BUILD_TIMESTAMP = Date.now(); // Unique per build
 console.clear(); // Clear any old logs
 console.log(`%c🏎️ F1 Dashboard v${DASHBOARD_VERSION}`, 'background: #cc0000; color: #fff; padding: 8px 16px; font-size: 16px; font-weight: bold;');
 console.log(`%c⏰ Build Time: ${new Date().toISOString()}`, 'background: #0066cc; color: #fff; padding: 4px 12px;');
-console.log('%c✅ All fixes applied - Monaco GP (June 7) should show as NEXT', 'color: #00ff00; font-weight: bold; font-size: 14px;');
-console.log('%c📍 Current Status Check:', 'color: #ffff00; font-weight: bold; font-size: 14px;');
+console.log('%c✅ CRITICAL FIX: Changed API from HTTP to HTTPS (mixed content fix)', 'color: #00ff00; font-weight: bold; font-size: 14px;');
+console.log('%c✅ API calls should now work - Data will load properly', 'color: #00ff00; font-weight: bold; font-size: 14px;');
+console.log('%c📍 Starting data fetch...', 'color: #ffff00; font-weight: bold; font-size: 14px;');
 
 // Add visible version indicator to page
 setTimeout(() => {
@@ -1272,7 +1273,7 @@ setTimeout(() => {
 }, 1000);
 
 // ========== API Configuration ==========
-const API_BASE = 'http://api.jolpi.ca/ergast/f1';
+const API_BASE = 'https://api.jolpi.ca/ergast/f1'; // HTTPS for mixed content fix
 const CURRENT_YEAR = new Date().getFullYear();
 let CURRENT_SEASON = CURRENT_YEAR.toString();
 let SEASON_DETECTED = false;
