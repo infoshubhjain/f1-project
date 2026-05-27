@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Shubh's Pit Wall · F1 Live</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1250,6 +1253,10 @@ body {
 </div>
 
 <script>
+// ========== VERSION ==========
+const DASHBOARD_VERSION = '2.0.0-DATEBUG FIX';
+console.log(`%c🏎️ F1 Dashboard v${DASHBOARD_VERSION}`, 'background: #cc0000; color: #fff; padding: 8px 16px; font-size: 14px; font-weight: bold;');
+
 // ========== API Configuration ==========
 const API_BASE = 'http://api.jolpi.ca/ergast/f1';
 const CURRENT_YEAR = new Date().getFullYear();
@@ -1488,14 +1495,18 @@ async function fetchRaceCalendar() {
     const allRaces = lastRaceData.MRData.RaceTable.Races;
 
     const now = new Date();
+    // Create today's date at midnight for accurate comparison
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayTimestamp = today.getTime();
+
+    // For extra clarity: create simple date string YYYYMMDD for comparison
+    const todayYYYYMMDD = parseInt(`${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`);
 
     let nextRaceIndex = -1;
     let liveRaceIndex = -1;
     let completedRaces = 0;
 
-    console.log(`📅 Today's date: ${today.toDateString()} (${todayTimestamp})`);
+    console.log(`📅 TODAY: ${today.toDateString()} | Numeric: ${todayYYYYMMDD}`);
 
     let html = '';
     races.forEach((race, i) => {
@@ -1504,20 +1515,23 @@ async function fetchRaceCalendar() {
       const raceDateOnly = new Date(year, month - 1, day); // month is 0-indexed
       const raceDateTimestamp = raceDateOnly.getTime();
 
+      // Simple numeric comparison for absolute clarity
+      const raceYYYYMMDD = parseInt(`${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`);
+
       // Check if race weekend is happening (Friday-Sunday, so 2 days before race day to race day)
       const twoDaysBefore = new Date(year, month - 1, day - 2);
       const twoDaysBeforeTimestamp = twoDaysBefore.getTime();
       const isLive = todayTimestamp >= twoDaysBeforeTimestamp && todayTimestamp <= raceDateTimestamp;
 
-      // Check if race is in the past (race day has completely passed)
-      const isPast = raceDateTimestamp < todayTimestamp && !isLive;
+      // Check if race is in the past - using BOTH timestamp AND numeric comparison
+      const isPast = (raceDateTimestamp < todayTimestamp || raceYYYYMMDD < todayYYYYMMDD) && !isLive;
 
       // Check if this is the next upcoming race
       const isNext = !isPast && !isLive && nextRaceIndex === -1 && liveRaceIndex === -1;
 
       // Debug logging for first 7 races
       if (i < 7) {
-        console.log(`Race ${i + 1}: ${race.raceName} on ${race.date} (${raceDateOnly.toDateString()}) - isPast: ${isPast}, isLive: ${isLive}, isNext: ${isNext}`);
+        console.log(`R${String(race.round).padStart(2,'0')} ${race.raceName}: ${race.date} (num: ${raceYYYYMMDD} vs today: ${todayYYYYMMDD}) → isPast=${isPast}, isLive=${isLive}, isNext=${isNext}`);
       }
 
       if (isLive) liveRaceIndex = i;
